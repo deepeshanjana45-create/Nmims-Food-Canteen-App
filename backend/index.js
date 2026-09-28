@@ -153,6 +153,40 @@ function createOtpEmailHtml(otp) {
   `;
 }
 
+// Send email via Resend HTTPS API (bypasses Render SMTP port blocking)
+async function sendEmailViaResend(to, otp) {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return false;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev',
+        to: [to],
+        subject: 'Your NMIMS Canteen Login OTP',
+        html: createOtpEmailHtml(otp),
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.id) {
+      console.log(`[RESEND SUCCESS] Sent OTP to ${to}, Email ID: ${data.id}`);
+      return true;
+    } else {
+      console.error('[RESEND ERROR]', data);
+      return false;
+    }
+  } catch (err) {
+    console.error('[RESEND FETCH ERROR]', err);
+    return false;
+  }
+}
+
 // POST /api/auth/send-otp
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
@@ -193,36 +227,40 @@ app.post('/api/auth/send-otp', async (req, res) => {
       attempts: 0
     });
 
-    // Send email via Nodemailer with a 5-second timeout
     let emailSent = false;
-    let emailErrorMsg = '';
 
-    try {
-      const transporter = await getTransporter();
-      const fromAddress = process.env.SMTP_FROM || `NMIMS Canteen <${process.env.SMTP_USER || 'no-reply@nmims.edu'}>`;
+    // 1. Try Resend HTTP API first (Works 100% on Render over HTTPS Port 443!)
+    if (process.env.RESEND_API_KEY) {
+      emailSent = await sendEmailViaResend(cleanEmail, otp);
+    }
 
-      // 5-second timeout because Render free tier blocks outbound SMTP ports 25, 465, 587
-      const sendPromise = transporter.sendMail({
-        from: fromAddress,
-        to: cleanEmail,
-        subject: 'Your NMIMS Canteen Login OTP',
-        text: `Your NMIMS Canteen verification code is: ${otp}. It is valid for 5 minutes.`,
-        html: createOtpEmailHtml(otp),
-      });
+    // 2. Fallback to Nodemailer SMTP if Resend didn't send
+    if (!emailSent) {
+      try {
+        const transporter = await getTransporter();
+        const fromAddress = process.env.SMTP_FROM || `NMIMS Canteen <${process.env.SMTP_USER || 'no-reply@nmims.edu'}>`;
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Render free tier blocked outbound SMTP')), 5000)
-      );
+        const sendPromise = transporter.sendMail({
+          from: fromAddress,
+          to: cleanEmail,
+          subject: 'Your NMIMS Canteen Login OTP',
+          text: `Your NMIMS Canteen verification code is: ${otp}. It is valid for 5 minutes.`,
+          html: createOtpEmailHtml(otp),
+        });
 
-      const info = await Promise.race([sendPromise, timeoutPromise]);
-      emailSent = true;
-      console.log(`[AUTH] OTP sent via email to: ${cleanEmail}`);
-      if (isEthereal && nodemailer.getTestMessageUrl) {
-        console.log(`[ETHEREAL PREVIEW URL]: ${nodemailer.getTestMessageUrl(info)}`);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Render free tier blocked outbound SMTP')), 5000)
+        );
+
+        const info = await Promise.race([sendPromise, timeoutPromise]);
+        emailSent = true;
+        console.log(`[AUTH] OTP sent via email to: ${cleanEmail}`);
+        if (isEthereal && nodemailer.getTestMessageUrl) {
+          console.log(`[ETHEREAL PREVIEW URL]: ${nodemailer.getTestMessageUrl(info)}`);
+        }
+      } catch (mailErr) {
+        console.warn(`[AUTH WARNING] SMTP delivery failed: ${mailErr.message}.`);
       }
-    } catch (mailErr) {
-      emailErrorMsg = mailErr.message || 'SMTP error';
-      console.warn(`[AUTH WARNING] Email delivery failed (${emailErrorMsg}). Providing OTP in response.`);
     }
 
     if (emailSent) {
