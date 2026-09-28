@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "760798816372",
+    "project_id": "nmims-canteen-c4b40",
+    "storage_bucket": "nmims-canteen-c4b40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760798816372:android:c2f05c85a20b5e0e14c921",
+        "android_client_info": {
+          "package_name": "com.anonymous.foodbookingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVeb2tg4O8gJC6V_0hsV77YFALIYbyzpM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
