@@ -1,5 +1,12 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '.env'), override: true });
+const fs = require('fs');
+
+// Load .env from backend folder or project root
+const envPath = fs.existsSync(path.resolve(__dirname, '.env'))
+  ? path.resolve(__dirname, '.env')
+  : path.resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: envPath, override: true });
+
 const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
@@ -30,7 +37,6 @@ const db = getFirestore(firebaseApp);
  */
 async function syncStudentToFirestore(studentEmail, uid) {
   try {
-    // Use email as the document ID (replace dots/special chars for safety)
     const docId = studentEmail;
     const studentDocRef = doc(db, 'students', docId);
     const docSnap = await getDoc(studentDocRef);
@@ -66,8 +72,6 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({ message: 'NMIMS Canteen API is running', status: 'ok' });
 });
-
-// We now use Firestore for OTP storage, so in-memory otpStore is removed.
 
 // Transporter cache
 let cachedTransporter = null;
@@ -332,5 +336,5 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ NMIMS Canteen Auth Server running on http://127.0.0.1:${PORT}`);
+  console.log(`✅ NMIMS Canteen Auth Server running on http://0.0.0.0:${PORT}`);
 });
