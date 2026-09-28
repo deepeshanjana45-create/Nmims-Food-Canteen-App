@@ -22,7 +22,7 @@
       "eas": {
         "projectId": "51a209ae-5c5b-4bce-8962-6e7fbfa543d4"
       },
-      "apiBaseUrl": "http://10.160.94.212:5001/api/auth"
+      "apiBaseUrl": "https://nmims-food-canteen-app-2.onrender.com/api/auth"
     },
     "plugins": [
       [
