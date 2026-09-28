@@ -143,6 +143,8 @@ export function AuthProvider({ children }) {
       return {
         success: true,
         email: cleanEmail,
+        otp: data.otp,
+        message: data.message,
       };
     } catch (error) {
       console.error('Send OTP error:', error);

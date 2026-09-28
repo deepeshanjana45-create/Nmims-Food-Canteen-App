@@ -60,10 +60,14 @@ export default function LoginModal() {
   const handleSendOtp = async () => {
     clearAuthError();
     try {
-      await sendEmailOtp(email);
+      const res = await sendEmailOtp(email);
       setStep('OTP');
       setCountdown(30);
-      setOtp('');
+      if (res?.otp) {
+        setOtp(String(res.otp));
+      } else {
+        setOtp('');
+      }
     } catch (_) {}
   };
 
