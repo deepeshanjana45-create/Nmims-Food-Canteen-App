@@ -78,9 +78,18 @@ async function getTransporter() {
   const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
   if (user && pass) {
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.SMTP_PORT || '465', 10);
+    const rawHost = (process.env.SMTP_HOST || '').trim().replace(/['"\r\n]/g, '');
+    const host = rawHost || 'smtp.gmail.com';
+    const port = parseInt((process.env.SMTP_PORT || '465').toString().trim(), 10) || 465;
     const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+    // Use Nodemailer built-in Gmail service for optimal Gmail compatibility
+    if (host.includes('gmail') || user.endsWith('@gmail.com')) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+      });
+    }
 
     return nodemailer.createTransport({
       host,
