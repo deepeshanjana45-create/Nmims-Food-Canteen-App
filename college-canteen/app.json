@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "food-booking-app",
+    "slug": "food-booking-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "icon": "./assets/icon.png",
+      "package": "com.anonymous.foodbookingapp",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiBaseUrl": "https://nmims-food-canteen-app-2.onrender.com/api/auth"
+    }
+  }
+}
